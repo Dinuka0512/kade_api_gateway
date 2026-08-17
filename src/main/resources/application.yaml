@@ -1,0 +1,52 @@
+server:
+  port: 8000
+
+spring:
+  application:
+    name: api_gateway
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: user_service
+              uri: lb://user_service
+              predicates:
+                - Path=/api/auth/**
+              filters:
+                - StripPrefix=1
+            - id: product_service
+              uri: lb://product_service
+              predicates:
+                - Path=/api/products/**
+              filters:
+                - StripPrefix=1
+            - id: product_categories
+              uri: lb://product_service
+              predicates:
+                - Path=/api/categories/**
+              filters:
+                - StripPrefix=1
+            - id: product_vendors
+              uri: lb://product_service
+              predicates:
+                - Path=/api/vendors/**
+              filters:
+                - StripPrefix=1
+            - id: order_service
+              uri: lb://order_service
+              predicates:
+                - Path=/api/orders/**
+              filters:
+                - StripPrefix=1
+            - id: order_dashboard
+              uri: lb://order_service
+              predicates:
+                - Path=/api/dashboard/**
+              filters:
+                - StripPrefix=1
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
