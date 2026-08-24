@@ -6,13 +6,6 @@ spring:
     name: api_gateway
   cloud:
     gateway:
-      globalcors:
-        cors-configurations:
-          '[/**]':
-            allowedOrigins: "http://localhost:3000"
-            allowedMethods: "*"
-            allowedHeaders: "*"
-            allowCredentials: true
       server:
         webmvc:
           routes:
