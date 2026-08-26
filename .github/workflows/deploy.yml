@@ -1,0 +1,67 @@
+name: Deploy API Gateway
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+
+      - name: Build application
+        run: ./mvnw clean package -DskipTests
+
+      - name: Copy JAR to VM
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USERNAME }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          port: ${{ secrets.VM_PORT }}
+          source: "target/api_gateway-0.0.1-SNAPSHOT.jar"
+          target: "/home/dinuka0512/kade_be/kade_api_gateway/target"
+
+      - name: Restart API Gateway
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USERNAME }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          port: ${{ secrets.VM_PORT }}
+          script: |
+            cd /home/dinuka0512/kade_be/kade_api_gateway
+
+            JAVA="/home/dinuka0512/.sdkman/candidates/java/current/bin/java"
+
+            echo "Stopping old API Gateway..."
+
+            OLD_PID=$(ss -lntp 2>/dev/null | grep ':8000' | grep -o 'pid=[0-9]*' | cut -d= -f2 || true)
+
+            if [ -n "$OLD_PID" ]; then
+              echo "Found API Gateway PID: $OLD_PID"
+              kill $OLD_PID || true
+              sleep 5
+            fi
+
+            echo "Starting new API Gateway..."
+
+            nohup "$JAVA" -jar target/api_gateway-0.0.1-SNAPSHOT.jar > gateway.log 2>&1 < /dev/null &
+
+            sleep 15
+
+            echo "Checking API Gateway..."
+
+            curl -f http://localhost:8000 > /dev/null
+
+            echo "API Gateway deployed successfully!"
